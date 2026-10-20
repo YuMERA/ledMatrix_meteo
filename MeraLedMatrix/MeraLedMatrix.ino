@@ -167,7 +167,7 @@ static bool renderScreen(Frame& f, const Screen& s, uint32_t t) {
     case SCR_PARAM:
       if (s.index >= g_view.count) return true;
       drawParam(f, g_view.params[s.index]);
-      done = t >= SCREEN_HOLD_MS;
+      done = t >= (g_view.params[s.index].kind == KIND_TEMP ? TEMP_HOLD_MS : SCREEN_HOLD_MS);
       break;
     case SCR_LABEL:
       done = drawScroll(f, g_scrollText, t, rgb(120, 200, 255));

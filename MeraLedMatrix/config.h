@@ -48,7 +48,8 @@
 #define FETCH_RETRY_MS      15000UL
 #define HTTP_TIMEOUT_MS     5000
 #define FRAME_MS            25
-#define SCREEN_HOLD_MS      4000UL
+#define SCREEN_HOLD_MS      2500UL  // ostali parametri i kratke poruke
+#define TEMP_HOLD_MS        6000UL  // temperatura je glavni podatak, stoji duze
 #define CLOCK_HOLD_MS       6000UL
 #define SCROLL_STEP_MS      45      // ms po pikselu skrolovanja
 #define STALE_AFTER_MS      (10UL * 60UL * 1000UL)

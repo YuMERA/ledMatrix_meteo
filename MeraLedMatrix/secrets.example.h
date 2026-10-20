@@ -5,7 +5,7 @@
 #define WIFI_PASS         "lozinka"
 
 // Adresa MERA servera, bez kose crte na kraju. Moze http:// ili https://.
-#define MERA_API_BASE     "https://meteo.example.rs"
+#define MERA_API_BASE     "https://meteo.mera-system.com"
 
 // Output ID i token iz Admin -> Output.
 #define MERA_OUTPUT_ID    "led-matrix"
