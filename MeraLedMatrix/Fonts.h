@@ -109,7 +109,7 @@ static const uint8_t FONT5X7[96][5] = {
   {0x00,0x06,0x09,0x09,0x06}, // stepen (0x7F)
 };
 
-// Uze cifre 4x7 - da "23.4°" sa ikonom i strelicom trenda stane u 32 kolone.
+// Uze cifre 4x7 - da "-12.3°C" i "1013 hPa" stanu u 32 kolone.
 static const uint8_t DIGITS4X7[10][4] = {
   {0x3E,0x41,0x41,0x3E}, // 0
   {0x00,0x42,0x7F,0x40}, // 1
@@ -130,9 +130,6 @@ static const uint8_t SYM_DEGREE[] = {0x07,0x05,0x07};
 static const uint8_t SYM_SPACE[]  = {0x00,0x00};
 static const uint8_t SYM_BLANK1[] = {0x00};
 
-// Strelice trenda, 3x7.
-static const uint8_t ARROW_UP[]   = {0x04,0x7E,0x04};
-static const uint8_t ARROW_DOWN[] = {0x20,0x3F,0x20};
 
 // Mala slova srpske latinice sa kvacicom, interni kodovi 0x80..0x84.
 // Mala slova 5x7 pocinju u trecem redu, pa kvacica staje iznad njih.

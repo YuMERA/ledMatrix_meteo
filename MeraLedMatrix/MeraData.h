@@ -24,11 +24,6 @@ struct Param {
   bool numeric;
   float value;
   char text[24];
-  // Prsten poslednjih vrednosti za trend; prezivljava osvezavanja jer se
-  // prenosi po kljucu.
-  float hist[TREND_WINDOW];
-  uint8_t histCount;
-  uint8_t histHead;
 };
 
 struct MeraData {
@@ -60,8 +55,8 @@ static bool containsCI(const char* hay, const char* needle) {
   return false;
 }
 
-// Vrsta se pogadja iz kljuca, izvornog polja i jedinice. Odatle ikona, boja i
-// da li ima smisla prikazivati trend.
+// Vrsta se pogadja iz kljuca, izvornog polja i jedinice. Odatle format
+// vrednosti, ikona i boja.
 static ParamKind detectKind(const char* key, const char* source, const char* unit) {
   const char* s[2] = {key, source};
   for (int i = 0; i < 2; i++) {
@@ -76,30 +71,6 @@ static ParamKind detectKind(const char* key, const char* source, const char* uni
   if (containsCI(unit, "hpa")) return KIND_PRESS;
   if (containsCI(unit, "C") && strstr(unit, "\xC2\xB0")) return KIND_TEMP;
   return KIND_OTHER;
-}
-
-static void pushHistory(Param& p) {
-  if (p.missing || !p.numeric) return;
-  p.hist[p.histHead] = p.value;
-  p.histHead = (p.histHead + 1) % TREND_WINDOW;
-  if (p.histCount < TREND_WINDOW) p.histCount++;
-}
-
-// -1 pada, 0 miruje, 1 raste. Samo za velicine kod kojih trend nesto znaci.
-static int trendDir(const Param& p) {
-  if (p.missing || !p.numeric || p.histCount < TREND_MIN_SAMPLES) return 0;
-  float threshold;
-  switch (p.kind) {
-    case KIND_TEMP:  threshold = 0.3f; break;
-    case KIND_HUM:   threshold = 2.0f; break;
-    case KIND_PRESS: threshold = 0.7f; break;
-    default: return 0;
-  }
-  uint8_t oldest = (p.histHead + TREND_WINDOW - p.histCount) % TREND_WINDOW;
-  float diff = p.value - p.hist[oldest];
-  if (diff >= threshold) return 1;
-  if (diff <= -threshold) return -1;
-  return 0;
 }
 
 static bool parsePayload(const String& body) {
@@ -146,19 +117,6 @@ static bool parsePayload(const String& body) {
 
 static void mergeStage() {
   xSemaphoreTake(g_dataMutex, portMAX_DELAY);
-  for (uint8_t i = 0; i < g_stage.count; i++) {
-    Param& np = g_stage.params[i];
-    for (uint8_t j = 0; j < g_data.count; j++) {
-      const Param& op = g_data.params[j];
-      if (strcmp(op.key, np.key) == 0) {
-        memcpy(np.hist, op.hist, sizeof(np.hist));
-        np.histCount = op.histCount;
-        np.histHead = op.histHead;
-        break;
-      }
-    }
-    pushHistory(np);
-  }
   memcpy(g_data.params, g_stage.params, sizeof(g_data.params));
   g_data.count = g_stage.count;
   g_data.isDay = g_stage.isDay;

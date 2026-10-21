@@ -27,7 +27,7 @@
 // --- Verzija softvera ---
 // Isti obrazac kao u MERA nodovima: verzija stoji samo u markeru, a VERSION_SW
 // pokazuje unutar njega, pa linker ne moze da izbaci marker kao mrtav kod.
-static const char MERA_FW_MARKER[] = "MERA_FW_VERSION=matrix-0.2.0";
+static const char MERA_FW_MARKER[] = "MERA_FW_VERSION=matrix-0.2.1";
 static const char* const VERSION_SW = MERA_FW_MARKER + sizeof("MERA_FW_VERSION=") - 1;
 
 static const char* HOSTNAME = "mera-matrix";
@@ -111,25 +111,20 @@ static void drawParam(Frame& f, const Param& p) {
   int textW = textWidth(txt);
   int unitW = smallWidth(unit);
   const uint8_t* icon = SHOW_ICONS ? iconFor(p.kind) : nullptr;
-  int trend = trendDir(p);
 
-  // Ikona zauzima 8 kolona (njena desna je prazna), jedinica razmak + sirinu,
-  // strelica 3 + razmak. Kad nema mesta, prvo otpada ikona, pa strelica,
-  // pa jedinica - broj se nikad ne skracuje.
+  // Ikona zauzima 8 kolona (njena desna je prazna), jedinica razmak + sirinu.
+  // Kad nema mesta, prvo otpada ikona, pa jedinica - broj se nikad ne skracuje.
   bool showIcon = icon != nullptr;
   bool showUnit = unitW > 0;
-  bool showTrend = trend != 0;
   auto need = [&]() {
-    return (showIcon ? 8 : 0) + textW + (showUnit ? unitW + 1 : 0) + (showTrend ? 4 : 0);
+    return (showIcon ? 8 : 0) + textW + (showUnit ? unitW + 1 : 0);
   };
   if (need() > MATRIX_W) showIcon = false;
-  if (need() > MATRIX_W) showTrend = false;
   if (need() > MATRIX_W) showUnit = false;
 
   int left = showIcon ? 8 : 0;
-  int right = MATRIX_W - (showTrend ? 4 : 0);
   int blockW = textW + (showUnit ? unitW + 1 : 0);
-  int x = left + ((right - left) - blockW) / 2;
+  int x = left + ((MATRIX_W - left) - blockW) / 2;
   if (x < left) x = left;
 
   Color c = paramColor(p);
@@ -137,10 +132,6 @@ static void drawParam(Frame& f, const Param& p) {
   x = drawString(f, x, 1, txt, c);
   // Mala slova poravnata uz donju ivicu cifara (redovi 3..7).
   if (showUnit) drawSmall(f, x, 3, unit, c);
-  if (showTrend) {
-    Glyph g = {trend > 0 ? ARROW_UP : ARROW_DOWN, 3};
-    drawGlyph(f, MATRIX_W - 3, 1, g, trend > 0 ? rgb(255, 60, 0) : rgb(0, 120, 255));
-  }
 }
 
 // Tekst koji staje stoji na sredini; duzi skroluje s desna na levo.

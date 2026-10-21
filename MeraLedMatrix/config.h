@@ -59,9 +59,5 @@
 #define SCROLL_STEP_MS      45      // ms po pikselu skrolovanja
 #define STALE_AFTER_MS      (10UL * 60UL * 1000UL)
 
-// Trend se racuna prema najstarijem uzorku u prozoru:
-// TREND_WINDOW x FETCH_INTERVAL_MS = 30 min.
-#define TREND_WINDOW        30
-#define TREND_MIN_SAMPLES   5
 
 #define MAX_PARAMS          10
