@@ -1,7 +1,7 @@
 # MERA LED matrica
 
 Prikaz podataka MERA meteo stanice na LED matrici 32×8: sat, temperatura,
-vlažnost, pritisak, vetar… sa ikonama, strelicom trenda i efektima prelaza.
+vlažnost, pritisak, vetar… sa jedinicama, strelicom trenda i efektima prelaza.
 
 Firmware je u `MeraLedMatrix/`, a pravljen je za **ESP32 Dev Module**.
 
@@ -69,11 +69,11 @@ Ciklus ide ovako: sat → polja iz Output-a redom → opis vremena (`weather_lab
 ako ga server šalje.
 
 - Vrsta polja se pogađa iz ključa, izvornog polja i jedinice (`temp`, `hum`,
-  `press`, `wind`, `rain`, `pm`, `lux`…). Od nje zavise ikona, boja i trend.
+  `press`, `wind`, `rain`, `pm`, `lux`…). Od nje zavise format, jedinica, boja i trend. Jedinica (`hPa`, `m/s`…) dolazi iz Admin → Output i ispisuje se malim fontom. Ikone su isključene (`SHOW_ICONS` u `config.h`) jer su na MAX7219 bile nečitljive.
 - Trend ↑↓ se računa za temperaturu, vlažnost i pritisak, prema vrednosti od
   pre ~30 min. Strelica se pojavi tek posle 5 očitavanja.
 - Ako ne stigne do servera, u gornjem desnom uglu trepće crveni piksel. Dok
   podataka uopšte nema, matrica skroluje razlog (WiFi, token, kod greške).
 - Osvetljenje prati `is_day` sa servera. Ako ga server ne pošalje, važi
   raspored od 7 do 21 h.
-- Matrica nema mesta za kvačice, pa se č, ć, š, ž i đ prikazuju kao c, s, z i dj.
+- Mala slova č, ć, š, ž i đ imaju svoje znakove; velika (Č, Ć, Š, Ž, Đ) nemaju mesta za kvačicu u 7 redova, pa se prikazuju kao C, S, Z i Dj.

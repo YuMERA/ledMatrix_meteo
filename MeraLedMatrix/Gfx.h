@@ -34,6 +34,25 @@ static int drawString(Frame& f, int x, int y, const char* s, Color c) {
   return x;
 }
 
+static int smallWidth(const char* s) {
+  int w = 0;
+  for (; *s; s++) {
+    uint8_t gw = smallGlyphFor(*s).w;
+    if (gw) w += gw + 1;
+  }
+  return w > 0 ? w - 1 : 0;
+}
+
+static int drawSmall(Frame& f, int x, int y, const char* s, Color c) {
+  for (; *s; s++) {
+    Glyph g = smallGlyphFor(*s);
+    if (!g.w) continue;
+    drawGlyph(f, x, y, g, c);
+    x += g.w + 1;
+  }
+  return x;
+}
+
 static void drawIcon(Frame& f, int x, int y, const uint8_t* rows, Color c) {
   for (int r = 0; r < 8; r++) {
     for (int col = 0; col < 8; col++) {
@@ -42,8 +61,9 @@ static void drawIcon(Frame& f, int x, int y, const uint8_t* rows, Color c) {
   }
 }
 
-// UTF-8 u nas skup znakova: srpska latinica bez kvacica, "°" u CH_DEGREE.
-// Matrica nema mesta za dijakritiku u 7 redova.
+// UTF-8 u nas skup znakova: mala slova sa kvacicom u interne kodove iz
+// Fonts.h, "°" u CH_DEGREE. Velika slova sa kvacicom nemaju mesta u 7 redova,
+// pa ostaju bez nje.
 static void toMatrixText(const char* in, char* out, size_t n) {
   size_t o = 0;
   const uint8_t* p = (const uint8_t*)in;
@@ -57,16 +77,17 @@ static void toMatrixText(const char* in, char* out, size_t n) {
     if (a == 0xC4) {
       switch (b) {
         case 0x8C: case 0x86: rep = "C"; break;   // Č Ć
-        case 0x8D: case 0x87: rep = "c"; break;   // č ć
+        case 0x8D: rep = "\x80"; break;           // č
+        case 0x87: rep = "\x81"; break;           // ć
         case 0x90: rep = "Dj"; break;             // Đ
-        case 0x91: rep = "dj"; break;             // đ
+        case 0x91: rep = "\x84"; break;           // đ
       }
     } else if (a == 0xC5) {
       switch (b) {
-        case 0xA0: rep = "S"; break;  // Š
-        case 0xA1: rep = "s"; break;  // š
-        case 0xBD: rep = "Z"; break;  // Ž
-        case 0xBE: rep = "z"; break;  // ž
+        case 0xA0: rep = "S"; break;     // Š
+        case 0xA1: rep = "\x82"; break;  // š
+        case 0xBD: rep = "Z"; break;     // Ž
+        case 0xBE: rep = "\x83"; break;  // ž
       }
     }
     for (const char* r = rep; *r && o + 1 < n; r++) out[o++] = *r;

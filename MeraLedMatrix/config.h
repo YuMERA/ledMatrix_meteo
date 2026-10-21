@@ -11,6 +11,11 @@
 #define MATRIX_W 32
 #define MATRIX_H 8
 
+// Ikone 8x8 ispred vrednosti. Na jednobojnom MAX7219 su previse sitne i
+// zbunjuju, pa je umesto njih jedinica ispisana malim fontom. Za WS2812 se
+// mogu probati (boja pomaze da se prepoznaju) - jos nije probano.
+#define SHOW_ICONS 0
+
 // ---- MAX7219 (4 modula u lancu, hardverski SPI: DIN=GPIO23, CLK=GPIO18) ----
 // FC16_HW je najcesci "4 in 1" modul sa AliExpress-a. Ako su slova u ogledalu
 // ili rotirana, probati PAROLA_HW, GENERIC_HW ili ICSTATION_HW.

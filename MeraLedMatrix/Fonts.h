@@ -134,12 +134,89 @@ static const uint8_t SYM_BLANK1[] = {0x00};
 static const uint8_t ARROW_UP[]   = {0x04,0x7E,0x04};
 static const uint8_t ARROW_DOWN[] = {0x20,0x3F,0x20};
 
+// Mala slova srpske latinice sa kvacicom, interni kodovi 0x80..0x84.
+// Mala slova 5x7 pocinju u trecem redu, pa kvacica staje iznad njih.
+// Velika slova nemaju mesta i ostaju bez kvacice (C, S, Z, Dj).
+#define CH_SR_C_CARON '\x80'  // č
+#define CH_SR_C_ACUTE '\x81'  // ć
+#define CH_SR_S_CARON '\x82'  // š
+#define CH_SR_Z_CARON '\x83'  // ž
+#define CH_SR_D_BAR   '\x84'  // đ
+
+static const uint8_t FONT5X7_SR[5][5] = {
+  {0x38,0x45,0x46,0x45,0x20}, // č
+  {0x38,0x44,0x46,0x45,0x20}, // ć
+  {0x48,0x55,0x56,0x55,0x20}, // š
+  {0x44,0x65,0x56,0x4D,0x44}, // ž
+  {0x38,0x44,0x44,0x4A,0x7F}, // đ
+};
+
+// Mali 3x5 font za jedinice (hPa, m/s, mm...), 5 redova. Mala slova se
+// crtaju kao velika - na 5 redova razlike ionako nema.
+static const uint8_t FONT3X5_AZ[26][3] = {
+  {0x1E,0x05,0x1E}, // A
+  {0x1F,0x15,0x0A}, // B
+  {0x0E,0x11,0x11}, // C
+  {0x1F,0x11,0x0E}, // D
+  {0x1F,0x15,0x11}, // E
+  {0x1F,0x05,0x01}, // F
+  {0x0E,0x11,0x1D}, // G
+  {0x1F,0x04,0x1F}, // H
+  {0x11,0x1F,0x11}, // I
+  {0x08,0x10,0x0F}, // J
+  {0x1F,0x04,0x1B}, // K
+  {0x1F,0x10,0x10}, // L
+  {0x1F,0x06,0x1F}, // M
+  {0x1F,0x01,0x1F}, // N
+  {0x0E,0x11,0x0E}, // O
+  {0x1F,0x05,0x02}, // P
+  {0x0E,0x19,0x16}, // Q
+  {0x1F,0x05,0x1A}, // R
+  {0x12,0x15,0x09}, // S
+  {0x01,0x1F,0x01}, // T
+  {0x1F,0x10,0x1F}, // U
+  {0x0F,0x10,0x0F}, // V
+  {0x1F,0x0C,0x1F}, // W
+  {0x1B,0x04,0x1B}, // X
+  {0x03,0x1C,0x03}, // Y
+  {0x19,0x15,0x13}, // Z
+};
+
+static const uint8_t FONT3X5_DIGITS[10][3] = {
+  {0x1F,0x11,0x1F}, {0x12,0x1F,0x10}, {0x1D,0x15,0x17}, {0x15,0x15,0x1F},
+  {0x07,0x04,0x1F}, {0x17,0x15,0x1D}, {0x1F,0x15,0x1D}, {0x01,0x01,0x1F},
+  {0x1F,0x15,0x1F}, {0x17,0x15,0x1F},
+};
+
+static const uint8_t SMALL_SLASH[]   = {0x18,0x04,0x03};
+static const uint8_t SMALL_PERCENT[] = {0x19,0x04,0x13};
+static const uint8_t SMALL_MINUS[]   = {0x04,0x04,0x04};
+static const uint8_t SMALL_DOT[]     = {0x10};
+static const uint8_t SMALL_DEGREE[]  = {0x03,0x03};
+
 struct Glyph {
   const uint8_t* cols;
   uint8_t w;
 };
 
+// Znak koga mali font nema dobija sirinu 0 i jednostavno se preskace.
+static Glyph smallGlyphFor(char c) {
+  if (c >= 'a' && c <= 'z') c -= 'a' - 'A';
+  if (c >= 'A' && c <= 'Z') return {FONT3X5_AZ[c - 'A'], 3};
+  if (c >= '0' && c <= '9') return {FONT3X5_DIGITS[c - '0'], 3};
+  switch (c) {
+    case '/':       return {SMALL_SLASH, 3};
+    case '%':       return {SMALL_PERCENT, 3};
+    case '-':       return {SMALL_MINUS, 3};
+    case '.':       return {SMALL_DOT, 1};
+    case CH_DEGREE: return {SMALL_DEGREE, 2};
+  }
+  return {nullptr, 0};
+}
+
 static Glyph glyphFor(char c) {
+  uint8_t u = (uint8_t)c;
+  if (u >= 0x80 && u <= 0x84) return {FONT5X7_SR[u - 0x80], 5};
   if (c >= '0' && c <= '9') return {DIGITS4X7[c - '0'], 4};
   switch (c) {
     case '-':       return {SYM_MINUS, 3};
@@ -149,7 +226,6 @@ static Glyph glyphFor(char c) {
     case CH_DEGREE: return {SYM_DEGREE, 3};
     case CH_BLANK1: return {SYM_BLANK1, 1};
   }
-  uint8_t u = (uint8_t)c;
   if (u >= 0x20 && u <= 0x7F) return {FONT5X7[u - 0x20], 5};
   return {FONT5X7['?' - 0x20], 5};
 }

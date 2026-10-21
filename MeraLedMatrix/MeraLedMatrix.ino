@@ -27,7 +27,7 @@
 // --- Verzija softvera ---
 // Isti obrazac kao u MERA nodovima: verzija stoji samo u markeru, a VERSION_SW
 // pokazuje unutar njega, pa linker ne moze da izbaci marker kao mrtav kod.
-static const char MERA_FW_MARKER[] = "MERA_FW_VERSION=matrix-0.1.0";
+static const char MERA_FW_MARKER[] = "MERA_FW_VERSION=matrix-0.2.0";
 static const char* const VERSION_SW = MERA_FW_MARKER + sizeof("MERA_FW_VERSION=") - 1;
 
 static const char* HOSTNAME = "mera-matrix";
@@ -75,12 +75,12 @@ static void drawClock(Frame& f) {
 
   Color c = g_isDay ? rgb(255, 170, 60) : rgb(255, 60, 0);
   drawString(f, (MATRIX_W - textWidth(s)) / 2, 1, s, c);
-
-  // Tacka koja putuje gornjim redom - sekundara.
-  if (ok) f.set(tm.tm_sec * MATRIX_W / 60, 0, rgb(0, 90, 255));
 }
 
-static void formatValue(const Param& p, char* out, size_t n) {
+// Vrednost ide krupnim fontom; jedinica malim 3x5 fontom pored nje, osim
+// "°C" i "%" koji su deo krupnog teksta.
+static void formatValue(const Param& p, char* out, size_t n, char* unit, size_t un) {
+  unit[0] = 0;
   if (p.missing) { copyStr(out, n, "--"); return; }
   if (!p.numeric) { toMatrixText(p.text, out, n); return; }
 
@@ -90,48 +90,53 @@ static void formatValue(const Param& p, char* out, size_t n) {
 
   switch (p.kind) {
     case KIND_TEMP:
-      // "-12.3°" ne staje uz ikonu, pa se jaki minus prikazuje bez decimale.
-      snprintf(out, n, v <= -10 ? "%.0f%c" : "%.1f%c", v, CH_DEGREE);
+      snprintf(out, n, "%.1f%cC", v, CH_DEGREE);
       break;
     case KIND_HUM:
       snprintf(out, n, "%.0f%%", v);
       break;
     case KIND_PRESS:
       snprintf(out, n, "%.0f", v);
+      toMatrixText(p.unit, unit, un);
       break;
-    case KIND_OTHER: {
-      char unit[12];
-      toMatrixText(p.unit, unit, sizeof(unit));
-      snprintf(out, n, (whole || fabsf(v) >= 100) ? "%.0f%s" : "%.1f%s", v, unit);
-      break;
-    }
     default:
       snprintf(out, n, (whole || fabsf(v) >= 100) ? "%.0f" : "%.1f", v);
+      toMatrixText(p.unit, unit, un);
   }
 }
 
 static void drawParam(Frame& f, const Param& p) {
-  char txt[24];
-  formatValue(p, txt, sizeof(txt));
+  char txt[24], unit[12];
+  formatValue(p, txt, sizeof(txt), unit, sizeof(unit));
   int textW = textWidth(txt);
-  const uint8_t* icon = iconFor(p.kind);
+  int unitW = smallWidth(unit);
+  const uint8_t* icon = SHOW_ICONS ? iconFor(p.kind) : nullptr;
   int trend = trendDir(p);
 
-  // Ikona zauzima 8 kolona (njena desna je prazna), strelica 3 + razmak.
-  // Kad nema mesta, prvo otpada strelica, pa ikona.
+  // Ikona zauzima 8 kolona (njena desna je prazna), jedinica razmak + sirinu,
+  // strelica 3 + razmak. Kad nema mesta, prvo otpada ikona, pa strelica,
+  // pa jedinica - broj se nikad ne skracuje.
   bool showIcon = icon != nullptr;
+  bool showUnit = unitW > 0;
   bool showTrend = trend != 0;
-  if ((showIcon ? 8 : 0) + textW + (showTrend ? 4 : 0) > MATRIX_W) showTrend = false;
-  if ((showIcon ? 8 : 0) + textW > MATRIX_W) showIcon = false;
+  auto need = [&]() {
+    return (showIcon ? 8 : 0) + textW + (showUnit ? unitW + 1 : 0) + (showTrend ? 4 : 0);
+  };
+  if (need() > MATRIX_W) showIcon = false;
+  if (need() > MATRIX_W) showTrend = false;
+  if (need() > MATRIX_W) showUnit = false;
 
   int left = showIcon ? 8 : 0;
   int right = MATRIX_W - (showTrend ? 4 : 0);
-  int x = left + ((right - left) - textW) / 2;
+  int blockW = textW + (showUnit ? unitW + 1 : 0);
+  int x = left + ((right - left) - blockW) / 2;
   if (x < left) x = left;
 
   Color c = paramColor(p);
   if (showIcon) drawIcon(f, 0, 0, icon, c);
-  drawString(f, x, 1, txt, c);
+  x = drawString(f, x, 1, txt, c);
+  // Mala slova poravnata uz donju ivicu cifara (redovi 3..7).
+  if (showUnit) drawSmall(f, x, 3, unit, c);
   if (showTrend) {
     Glyph g = {trend > 0 ? ARROW_UP : ARROW_DOWN, 3};
     drawGlyph(f, MATRIX_W - 3, 1, g, trend > 0 ? rgb(255, 60, 0) : rgb(0, 120, 255));
